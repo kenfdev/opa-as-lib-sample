@@ -1,6 +1,9 @@
 package main
 
-import "github.com/open-policy-agent/opa/rego"
+import (
+	"github.com/open-policy-agent/opa/rego"
+	"os"
+)
 
 import (
 	"context"
@@ -12,7 +15,12 @@ func main() {
 
 	// Create a simple query
 	r := rego.New(
-		rego.Query("input.x == 1"),
+		rego.Query("data.example.allow"),
+		rego.Module("example.rego",
+			`package example
+default allow = false
+allow { input.x == 1 }`,
+		),
 	)
 
 	// Prepare for evaluation
@@ -20,7 +28,8 @@ func main() {
 
 	if err != nil {
 		// Handle error.
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	// Raw input data that will be used in the first evaluation
@@ -31,7 +40,8 @@ func main() {
 
 	if err != nil {
 		// Handle error.
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	// Inspect results.
@@ -45,7 +55,8 @@ func main() {
 
 	if err != nil {
 		// Handle error.
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	// Inspect results.
