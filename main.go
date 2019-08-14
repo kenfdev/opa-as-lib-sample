@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/open-policy-agent/opa/rego"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 import (
@@ -10,17 +13,54 @@ import (
 	"fmt"
 )
 
+// createModules creates rego.Module slices from the file paths provided
+func createModules(filePaths []string) ([]func(r *rego.Rego), error) {
+	var modules []func(r *rego.Rego)
+
+	for _, path := range filePaths {
+		file, err := os.Stat(path)
+		if err != nil {
+			// Handle error.
+			return nil, err
+		}
+
+		var dirPath string
+		dirPath = filepath.Dir(path)
+
+		out, err := ioutil.ReadFile(dirPath + "/" + file.Name())
+		if err != nil {
+			// Handle error.
+			return nil, err
+		}
+
+		module := rego.Module(file.Name(), string(out))
+		modules = append(modules, module)
+	}
+
+	return modules, nil
+}
+
 func main() {
 	ctx := context.Background()
 
+	// Unmarshal the input JSON
+	var input map[string]interface{}
+	inputStr := os.Args[1]
+	err := json.Unmarshal([]byte(inputStr), &input)
+
+	filePaths := os.Args[2:]
+
+	modules, err := createModules(filePaths)
+	if err != nil {
+		// Handle error.
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	// Create a simple query
+	options := append([]func(r *rego.Rego){rego.Query("data.example.allow")}, modules...)
 	r := rego.New(
-		rego.Query("data.example.allow"),
-		rego.Module("example.rego",
-			`package example
-default allow = false
-allow { input.x == 1 }`,
-		),
+		options...,
 	)
 
 	// Prepare for evaluation
@@ -32,9 +72,6 @@ allow { input.x == 1 }`,
 		os.Exit(1)
 	}
 
-	// Raw input data that will be used in the first evaluation
-	input := map[string]interface{}{"x": 2}
-
 	// Run the evaluation
 	rs, err := pq.Eval(ctx, rego.EvalInput(input))
 
@@ -45,20 +82,5 @@ allow { input.x == 1 }`,
 	}
 
 	// Inspect results.
-	fmt.Println("initial result:", rs[0].Expressions[0])
-
-	// Update input
-	input["x"] = 1
-
-	// Run the evaluation with new input
-	rs, err = pq.Eval(ctx, rego.EvalInput(input))
-
-	if err != nil {
-		// Handle error.
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
-	// Inspect results.
-	fmt.Println("updated result:", rs[0].Expressions[0])
+	fmt.Println("result:", rs[0].Expressions[0])
 }
