@@ -15,7 +15,12 @@ func main() {
 
 	// Create a simple query
 	r := rego.New(
-		rego.Query("input.x == 1"),
+		rego.Query("data.example.allow"),
+		rego.Module("example.rego",
+			`package example
+default allow = false
+allow { input.x == 1 }`,
+		),
 	)
 
 	// Prepare for evaluation
