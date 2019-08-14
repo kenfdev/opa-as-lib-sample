@@ -1,6 +1,9 @@
 package main
 
-import "github.com/open-policy-agent/opa/rego"
+import (
+	"github.com/open-policy-agent/opa/rego"
+	"os"
+)
 
 import (
 	"context"
@@ -20,7 +23,8 @@ func main() {
 
 	if err != nil {
 		// Handle error.
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	// Raw input data that will be used in the first evaluation
@@ -31,7 +35,8 @@ func main() {
 
 	if err != nil {
 		// Handle error.
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	// Inspect results.
@@ -45,7 +50,8 @@ func main() {
 
 	if err != nil {
 		// Handle error.
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	// Inspect results.
