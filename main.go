@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/open-policy-agent/opa/rego"
 	"os"
 )
@@ -12,6 +13,17 @@ import (
 
 func main() {
 	ctx := context.Background()
+
+	// Unmarshal the input JSON
+	var input map[string]interface{}
+	inputStr := os.Args[1]
+	err := json.Unmarshal([]byte(inputStr), &input)
+
+	if err != nil {
+		// Handle error.
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 
 	// Create a simple query
 	r := rego.New(
@@ -32,9 +44,6 @@ allow { input.x == 1 }`,
 		os.Exit(1)
 	}
 
-	// Raw input data that will be used in the first evaluation
-	input := map[string]interface{}{"x": 2}
-
 	// Run the evaluation
 	rs, err := pq.Eval(ctx, rego.EvalInput(input))
 
@@ -45,20 +54,5 @@ allow { input.x == 1 }`,
 	}
 
 	// Inspect results.
-	fmt.Println("initial result:", rs[0].Expressions[0])
-
-	// Update input
-	input["x"] = 1
-
-	// Run the evaluation with new input
-	rs, err = pq.Eval(ctx, rego.EvalInput(input))
-
-	if err != nil {
-		// Handle error.
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
-	// Inspect results.
-	fmt.Println("updated result:", rs[0].Expressions[0])
+	fmt.Println("result:", rs[0].Expressions[0])
 }
